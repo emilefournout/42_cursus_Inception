@@ -1,0 +1,33 @@
+server {
+	# Listen https
+	listen 443 ssl;
+	listen [::]:443 ssl;
+	
+	server_name efournou.42.fr;
+
+	ssl_certificate		/etc/ssl/certs/efournou.crt;
+	ssl_certificate_key	/etc/ssl/certs/efournou.key;
+
+	ssl_protocols		TLSv1.2 TLSv1.3;
+	
+	# Files directory
+	root /var/www/wordpress_data;
+	index index.php;	
+
+	# Routes with redirection to cgi
+	location / {
+		try_files $uri $uri/ /index.php?$args;
+	}
+
+	location ~\.php$ {
+		try_files $uri =404;
+		fastcgi_pass wordpress:9000;
+		proxy_set_header X-Forwarded-User www-data;
+		fastcgi_index index.php;
+		include fastcgi_params;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param QUERY_STRING $query_string;
+		fastcgi_param PATH_INFO $fastcgi_path_info;
+	}
+}
+

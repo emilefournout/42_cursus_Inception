@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  mariadb:
+    container_name: mariadb
+    build:
+      context: ./requirements/mariadb
+      # Use args to be able to RUN with env variable
+      args:
+        - ROOT_USER=${MYSQL_ROOT_USER}
+        - ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        - USER=${MYSQL_USER}
+        - PASSWORD=${MYSQL_PASSWORD}
+        - DB=${MYSQL_DB}
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - my_network
+  wordpress:
+    container_name: wordpress
+    build : ./requirements/wordpress
+    volumes:
+      - wp:/var/www/wordpress_data
+    networks: 
+      - my_network
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    volumes :
+      - wp:/var/www/wordpress_data
+    networks:
+      - my_network
+    restart: unless-stopped
+      # Set the only entrypoint of network : 443 container port to 443 host port (ssl)
+    ports: 
+      - "443:443"
+    depends_on: 
+      - wordpress
+
+networks:
+  my_network:
+
+volumes:
+  wp:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${WP_VOLUME_PATH}
+  db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_VOLUME_PATH} 
